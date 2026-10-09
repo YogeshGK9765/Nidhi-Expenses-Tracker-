@@ -29,6 +29,7 @@ import com.example.ui.navigation.NidhiBottomNavigation
 import com.example.ui.navigation.Screen
 import com.example.ui.reports.ReportsScreen
 import com.example.ui.settings.SettingsScreen
+import com.example.ui.splash.SplashScreen
 import com.example.ui.theme.NidhiTheme
 
 class MainActivity : ComponentActivity() {
@@ -51,8 +52,14 @@ class MainActivity : ComponentActivity() {
                 ThemeMode.SYSTEM -> isSystemInDarkTheme()
             }
 
+            var showSplash by remember { mutableStateOf(true) }
+
             NidhiTheme(darkTheme = isDark) {
-                NidhiApp(viewModel = viewModel)
+                if (showSplash) {
+                    SplashScreen(onSplashFinished = { showSplash = false })
+                } else {
+                    NidhiApp(viewModel = viewModel)
+                }
             }
         }
     }

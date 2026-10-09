@@ -495,9 +495,9 @@ fun AddEditExpenseScreen(
                 }
             }
 
-            // 7. Note Field
+            // 7. Description Field
             Text(
-                text = "Note",
+                text = "Description",
                 style = MaterialTheme.typography.labelMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -506,11 +506,12 @@ fun AddEditExpenseScreen(
             OutlinedTextField(
                 value = noteText,
                 onValueChange = { noteText = it },
-                placeholder = { Text("Optional note or description") },
-                maxLines = 2,
+                placeholder = { Text("Enter description or note (optional)") },
+                label = { Text("Description") },
+                maxLines = 3,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .testTag("note_input"),
+                    .testTag("description_input"),
                 shape = RoundedCornerShape(14.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedContainerColor = MaterialTheme.colorScheme.surface,
