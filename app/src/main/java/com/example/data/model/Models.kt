@@ -72,3 +72,32 @@ enum class ThemeMode {
     DARK,
     LIGHT
 }
+
+data class DaySpendingItem(
+    val dayOfMonth: Int,
+    val dayLabel: String,
+    val dateMillis: Long,
+    val totalPaise: Long,
+    val count: Int
+)
+
+data class MonthSpendingItem(
+    val monthIndex: Int,
+    val monthName: String,
+    val year: Int,
+    val totalPaise: Long,
+    val count: Int
+)
+
+data class MonthlyPatternState(
+    val selectedYear: Int = 2026,
+    val selectedMonthIndex: Int = 9, // 0-based, 9 = October
+    val monthName: String = "October 2026",
+    val totalMonthPaise: Long = 0L,
+    val totalYearPaise: Long = 0L,
+    val dailyItems: List<DaySpendingItem> = emptyList(),
+    val monthlyItems: List<MonthSpendingItem> = emptyList(),
+    val peakDay: DaySpendingItem? = null,
+    val dailyAveragePaise: Long = 0L,
+    val activeDaysCount: Int = 0
+)

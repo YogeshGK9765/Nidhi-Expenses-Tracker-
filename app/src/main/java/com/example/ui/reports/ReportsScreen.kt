@@ -47,6 +47,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.data.model.CategoryReportItem
 import com.example.data.model.ReportPeriod
 import com.example.domain.MoneyFormatter
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
+import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.ShowChart
 import com.example.ui.MainViewModel
 import com.example.ui.components.BarChart
 import com.example.ui.components.ChartColors
@@ -60,6 +64,7 @@ import com.example.ui.theme.ExpenseRed
 fun ReportsScreen(
     viewModel: MainViewModel,
     onNavigateToAdd: () -> Unit,
+    onNavigateToMonthlyPatterns: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val reportData by viewModel.reportData.collectAsStateWithLifecycle()
@@ -79,14 +84,45 @@ fun ReportsScreen(
             .fillMaxSize()
             .windowInsetsPadding(WindowInsets.statusBars)
     ) {
-        // App Bar Title
-        Text(
-            text = "Reports",
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)
-        )
+        // App Bar Title & Bar Chart Button
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Reports",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+
+            // Shortcut to Monthly Spending Patterns Bar Chart
+            Row(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(MaterialTheme.colorScheme.primaryContainer)
+                    .clickable { onNavigateToMonthlyPatterns() }
+                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Default.ShowChart,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    text = "Spending Patterns",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+        }
 
         // 1. Period Selector (Daily, Weekly, Monthly, Yearly)
         Row(
@@ -247,12 +283,39 @@ fun ReportsScreen(
                         backgroundColor = MaterialTheme.colorScheme.surface
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
-                            Text(
-                                text = "Spending Timeline",
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "Spending Timeline",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Row(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .clickable { onNavigateToMonthlyPatterns() }
+                                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = "Interactive Chart",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.primary,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(12.dp)
+                                    )
+                                }
+                            }
                             Spacer(modifier = Modifier.height(14.dp))
                             BarChart(items = reportData.timeBreakdown)
                         }

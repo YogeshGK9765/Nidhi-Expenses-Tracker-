@@ -88,6 +88,13 @@ sealed class Screen(
         selectedIcon = Icons.Filled.Settings,
         unselectedIcon = Icons.Outlined.Settings
     )
+
+    object MonthlyPatterns : Screen(
+        route = "monthly_patterns",
+        title = "Patterns",
+        selectedIcon = Icons.Filled.BarChart,
+        unselectedIcon = Icons.Outlined.BarChart
+    )
 }
 
 val bottomNavItems = listOf(

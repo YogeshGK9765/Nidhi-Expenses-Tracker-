@@ -27,6 +27,7 @@ import com.example.ui.expenses.ExpensesScreen
 import com.example.ui.home.HomeScreen
 import com.example.ui.navigation.NidhiBottomNavigation
 import com.example.ui.navigation.Screen
+import com.example.ui.reports.MonthlyPatternsScreen
 import com.example.ui.reports.ReportsScreen
 import com.example.ui.settings.SettingsScreen
 import com.example.ui.splash.SplashScreen
@@ -80,7 +81,7 @@ fun NidhiApp(viewModel: MainViewModel) {
 
     // System Back Handler
     BackHandler(enabled = currentScreen != Screen.Home) {
-        if (currentScreen == Screen.Add) {
+        if (currentScreen == Screen.Add || currentScreen == Screen.MonthlyPatterns) {
             editingExpense = null
             currentScreen = previousScreen
         } else {
@@ -120,6 +121,7 @@ fun NidhiApp(viewModel: MainViewModel) {
                         },
                         onNavigateToExpenses = { onNavigateTo(Screen.Expenses) },
                         onNavigateToSettings = { onNavigateTo(Screen.Settings) },
+                        onNavigateToMonthlyPatterns = { onNavigateTo(Screen.MonthlyPatterns) },
                         onEditExpense = { exp ->
                             editingExpense = exp
                             onNavigateTo(Screen.Add)
@@ -158,6 +160,16 @@ fun NidhiApp(viewModel: MainViewModel) {
                         onNavigateToAdd = {
                             editingExpense = null
                             onNavigateTo(Screen.Add)
+                        },
+                        onNavigateToMonthlyPatterns = { onNavigateTo(Screen.MonthlyPatterns) }
+                    )
+                }
+
+                Screen.MonthlyPatterns -> {
+                    MonthlyPatternsScreen(
+                        viewModel = viewModel,
+                        onNavigateBack = {
+                            currentScreen = previousScreen
                         }
                     )
                 }

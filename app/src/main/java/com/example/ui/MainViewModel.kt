@@ -8,14 +8,20 @@ import com.example.data.local.entity.CategoryEntity
 import com.example.data.local.entity.ExpenseEntity
 import com.example.data.local.entity.PaymentMethodEntity
 import com.example.data.local.entity.SubcategoryEntity
+import com.example.data.model.DaySpendingItem
 import com.example.data.model.ExpenseWithDetails
 import com.example.data.model.FilterDateRange
 import com.example.data.model.FilterState
+import com.example.data.model.MonthSpendingItem
+import com.example.data.model.MonthlyPatternState
 import com.example.data.model.ReportData
 import com.example.data.model.ReportPeriod
 import com.example.data.model.SortOrder
 import com.example.data.model.ThemeMode
 import com.example.data.repository.ExpenseRepository
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -89,6 +95,22 @@ class MainViewModel(
     }.flatMapLatest { (period, accId) ->
         repository.getReportData(period, accId)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ReportData())
+
+    // Monthly Spending Patterns state
+    private val initialCal = Calendar.getInstance()
+    private val _patternYear = MutableStateFlow(initialCal.get(Calendar.YEAR))
+    private val _patternMonth = MutableStateFlow(initialCal.get(Calendar.MONTH))
+    val patternYear: StateFlow<Int> = _patternYear.asStateFlow()
+    val patternMonth: StateFlow<Int> = _patternMonth.asStateFlow()
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val monthlyPatternState: StateFlow<MonthlyPatternState> = combine(
+        repository.getAllExpenses(),
+        _patternYear,
+        _patternMonth
+    ) { allExpenses, year, month ->
+        calculateMonthlyPattern(allExpenses, year, month)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), MonthlyPatternState())
 
     // User Settings
     private val _themeMode = MutableStateFlow(ThemeMode.DARK)
@@ -262,6 +284,111 @@ class MainViewModel(
                 repository.insertPaymentMethod(PaymentMethodEntity(name = name.trim()))
             }
         }
+    }
+
+    fun previousPatternMonth() {
+        val currentMonth = _patternMonth.value
+        val currentYear = _patternYear.value
+        if (currentMonth == 0) {
+            _patternMonth.value = 11
+            _patternYear.value = currentYear - 1
+        } else {
+            _patternMonth.value = currentMonth - 1
+        }
+    }
+
+    fun nextPatternMonth() {
+        val currentMonth = _patternMonth.value
+        val currentYear = _patternYear.value
+        if (currentMonth == 11) {
+            _patternMonth.value = 0
+            _patternYear.value = currentYear + 1
+        } else {
+            _patternMonth.value = currentMonth + 1
+        }
+    }
+
+    fun setPatternMonth(year: Int, monthIndex: Int) {
+        _patternYear.value = year
+        _patternMonth.value = monthIndex.coerceIn(0, 11)
+    }
+
+    private fun calculateMonthlyPattern(
+        allExpenses: List<ExpenseWithDetails>,
+        year: Int,
+        month: Int
+    ): MonthlyPatternState {
+        val cal = Calendar.getInstance()
+        cal.set(Calendar.YEAR, year)
+        cal.set(Calendar.MONTH, month)
+        cal.set(Calendar.DAY_OF_MONTH, 1)
+        val daysInMonth = cal.getActualMaximum(Calendar.DAY_OF_MONTH)
+        val monthFormat = SimpleDateFormat("MMMM yyyy", Locale.getDefault())
+        val monthName = monthFormat.format(cal.time)
+
+        val dayExpensesMap = mutableMapOf<Int, MutableList<ExpenseWithDetails>>()
+        val monthExpensesMap = mutableMapOf<Int, MutableList<ExpenseWithDetails>>()
+        var totalYearPaise = 0L
+
+        allExpenses.forEach { exp ->
+            cal.timeInMillis = exp.expense.expenseDate
+            val expYear = cal.get(Calendar.YEAR)
+            val expMonth = cal.get(Calendar.MONTH)
+            val expDay = cal.get(Calendar.DAY_OF_MONTH)
+
+            if (expYear == year) {
+                totalYearPaise += exp.expense.amount
+                monthExpensesMap.getOrPut(expMonth) { mutableListOf() }.add(exp)
+                if (expMonth == month) {
+                    dayExpensesMap.getOrPut(expDay) { mutableListOf() }.add(exp)
+                }
+            }
+        }
+
+        val dailyItems = (1..daysInMonth).map { day ->
+            val list = dayExpensesMap[day] ?: emptyList()
+            val total = list.sumOf { it.expense.amount }
+            cal.set(Calendar.YEAR, year)
+            cal.set(Calendar.MONTH, month)
+            cal.set(Calendar.DAY_OF_MONTH, day)
+            DaySpendingItem(
+                dayOfMonth = day,
+                dayLabel = String.format("%02d", day),
+                dateMillis = cal.timeInMillis,
+                totalPaise = total,
+                count = list.size
+            )
+        }
+
+        val monthNames = listOf("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+        val monthlyItems = (0..11).map { mIdx ->
+            val list = monthExpensesMap[mIdx] ?: emptyList()
+            MonthSpendingItem(
+                monthIndex = mIdx,
+                monthName = monthNames[mIdx],
+                year = year,
+                totalPaise = list.sumOf { it.expense.amount },
+                count = list.size
+            )
+        }
+
+        val totalMonthPaise = dailyItems.sumOf { it.totalPaise }
+        val peakDay = dailyItems.filter { it.totalPaise > 0 }.maxByOrNull { it.totalPaise }
+        val activeDaysCount = dailyItems.count { it.totalPaise > 0 }
+        val dailyAveragePaise = if (daysInMonth > 0) totalMonthPaise / daysInMonth else 0L
+
+        return MonthlyPatternState(
+            selectedYear = year,
+            selectedMonthIndex = month,
+            monthName = monthName,
+            totalMonthPaise = totalMonthPaise,
+            totalYearPaise = totalYearPaise,
+            dailyItems = dailyItems,
+            monthlyItems = monthlyItems,
+            peakDay = peakDay,
+            dailyAveragePaise = dailyAveragePaise,
+            activeDaysCount = activeDaysCount
+        )
     }
 }
 
